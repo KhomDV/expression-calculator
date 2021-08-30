@@ -3,77 +3,111 @@ function eval() {
     return;
 }
 
-function expressionCalculator(expr) {
-    // write your solution here
-    
+function isNumber(s) {
+  return /\d/.test(s);
+}
 
-  obj = expr.split('').reduce((acc, el) => {
+function editStack(arrOutput, arrStack, value=undefined) {
+  const operationsConfig = {
+    '(': 0,
+    ')': 1,
+    '+': 2,
+    '-': 2,
+    '*': 3,
+    '/': 3
+  };
+
+  if (value === undefined) {
+    for (let i = arrStack.length-1; i >= 0; i--) {
+      if (operationsConfig[arrStack[i]] > 1) {
+        arrOutput.push(arrStack[i]);
+      }
+    }
+    return;
+  }
+
+  const rangOperation = operationsConfig[value];
+
+  if (arrStack.length > 0) {
+    if (rangOperation > operationsConfig[arrStack[arrStack.length-1]] || rangOperation === 0) {
+      arrStack.push(value);
+    } else {
+      let i = arrStack.length-1;
+      while (operationsConfig[arrStack[i]] >= rangOperation && i >= 0) {
+        if (operationsConfig[arrStack[i]] > 1) {
+          arrOutput.push(arrStack[i]);
+        }
+        arrStack.pop();
+        i--;
+      }
+      if (rangOperation === 1) {
+        arrStack.pop();
+      } else {
+        arrStack.push(value);
+      }
+    }
+  } else {
+    arrStack.push(value);
+  }
+
+  return;
+}
+
+
+
+function expressionCalculator(expr) {
+  // write your solution here
+  
+  expr = expr.trim();
+
+  const obj = expr.split('').reduce((acc, el) => {
     acc[el] = (acc[el] || 0) + 1;
     return acc;
   }, {});
-
-  if (obj['('] !== obj[')']) {
-    throw new SyntaxError('TypeError: Division by zero.');
-  }
-
-
-  console.log( obj['('] );
-  console.log( obj[')'] );
-
-  operation = [
-    {'+': 1},
-    {'-': 1},
-    {'*': 2},
-    {'/': 2}
-  ];
-
-  // function showError(textError) {
-  //   return throw new SyntaxError(textError);
-  // }
-
-  // function recSteck(arrOutput, arrSteck, value=undefined) {
-
-  // }
-
-
+  if (obj["("] !== obj[")"]) throw new Error('ExpressionError: Brackets must be paired');
 
   let numb = '';
   let arrOutput = [];
-  let arrSteck = [];
+  let arrStack = [];
   let i = -1;
   while (i < expr.length-1) {
     i++;
-    s = expr[i];
-    console.log( s );
-    if (s === ' ') continue;
-    if (isNumber(s)) {
-      numb = numb + s;
+    simbol = expr[i];
+    if (simbol === ' ') continue;
+    if (isNumber(simbol)) {
+      numb = numb + simbol;
       if (i === expr.length-1) arrOutput.push(Number(numb));
     } else {
       if (isNumber(numb)) {
         arrOutput.push(Number(numb));
       }
-      arrSteck.push(s);
+      editStack(arrOutput, arrStack, simbol);
       numb = '';
     }
   }
+  editStack(arrOutput, arrStack);
 
+  const operators = {
+    '+': (x, y) => x + y,
+    '-': (x, y) => x - y,
+    '*': (x, y) => x * y,
+    '/': (x, y) => x / y
+  };
 
-  if ( arrSteck.length > 0 ) {
-    for (let i = arrSteck.length-1; i >= 0; i--) {
-      arrOutput.push(arrSteck[i])
+  let stack = [];
+  arrOutput.forEach((token) => {
+    if (token in operators) {
+      if (token === '/' && stack[stack.length-1] === 0) throw new Error('TypeError: Division by zero.');
+      let [y, x] = [stack.pop(), stack.pop()];
+      stack.push(operators[token](x, y));
+    } else {
+      stack.push(parseFloat(token));
     }
-  }
+  });
 
-
-
-  console.log( isNumber('') );
-
-  console.log( arrOutput );
-  console.log( arrSteck );
-
-  return null;
+  return stack.pop();
 }
+
 
 module.exports = {
     expressionCalculator
